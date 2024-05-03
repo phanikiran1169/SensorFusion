@@ -131,17 +131,17 @@ void KalmanFilter::handleGPSMeasurement(GPSMeasurement meas)
     else
     {
         // ----------------------------------------------------------------------- //
-            VectorXd state = Vector4d::Zero();
-            MatrixXd cov = Matrix4d::Zero();
+        VectorXd state = Vector4d::Zero();
+        MatrixXd cov = Matrix4d::Zero();
 
-            state << meas.x, meas.y, 0, 0;
-            cov(0,0) = GPS_POS_STD*GPS_POS_STD;
-            cov(1,1) = GPS_POS_STD*GPS_POS_STD;
-            cov(2,2) = INIT_VEL_STD*INIT_VEL_STD;
-            cov(3,3) = INIT_VEL_STD*INIT_VEL_STD;
+        state << meas.x, meas.y, 0, 0;
+        cov(0,0) = GPS_POS_STD*GPS_POS_STD;
+        cov(1,1) = GPS_POS_STD*GPS_POS_STD;
+        cov(2,2) = INIT_VEL_STD*INIT_VEL_STD;
+        cov(3,3) = INIT_VEL_STD*INIT_VEL_STD;
 
-            setState(state);
-            setCovariance(cov);
+        setState(state);
+        setCovariance(cov);
         // ----------------------------------------------------------------------- //
     }        
 }
