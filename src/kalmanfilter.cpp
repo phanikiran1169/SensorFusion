@@ -45,11 +45,11 @@ void KalmanFilter::handleLidarMeasurement(LidarMeasurement meas, const BeaconMap
 
             // Predicated Measurement Value
             VectorXd z_hat = Vector2d::Zero();
-            double delta_x = map_beacon.x - state[0];;
-            double delta_y = map_beacon.y - state[1];;
-            double psi = state[2];
+            double delta_x = map_beacon.x - state(0);;
+            double delta_y = map_beacon.y - state(1);;
+            double psi = state(2);
             double beacon_range = std::sqrt((delta_x)*(delta_x) + (delta_y)*(delta_y));
-            double beacon_angle = wrapAngle(std::atan(delta_y/delta_x) - psi);
+            double beacon_angle = wrapAngle(std::atan2(delta_y, delta_x) - psi);
             z_hat(0) = beacon_range;
             z_hat(1) = beacon_angle;
 
@@ -64,7 +64,7 @@ void KalmanFilter::handleLidarMeasurement(LidarMeasurement meas, const BeaconMap
 
             VectorXd y = z - z_hat;
             MatrixXd S = H * cov * H.transpose() + R;
-            MatrixXd K = cov*H.transpose()*S.inverse();
+            MatrixXd K = cov * H.transpose() * S.inverse();
 
             y(1) = wrapAngle(y(1)); // Wrap the Heading Innovation
 
@@ -99,7 +99,8 @@ void KalmanFilter::predictionStep(GyroMeasurement gyro, double dt)
         // State Update
         state(0) += dt*V*std::cos(psi);
         state(1) += dt*V*std::sin(psi);
-        state(2) += dt*gyro.psi_dot;
+        state(2) += dt*psi_dot;
+        state(2) = wrapAngle(state(2));
 
         // Covariance Update
         
@@ -178,7 +179,7 @@ void KalmanFilter::handleGPSMeasurement(GPSMeasurement meas)
         state << meas.x, meas.y, 0, 0;
         cov(0,0) = GPS_POS_STD*GPS_POS_STD;
         cov(1,1) = GPS_POS_STD*GPS_POS_STD;
-        cov(2,2) = INIT_VEL_STD*INIT_VEL_STD;
+        cov(2,2) = INIT_PSI_STD*INIT_PSI_STD;
         cov(3,3) = INIT_VEL_STD*INIT_VEL_STD;
 
         setState(state);
