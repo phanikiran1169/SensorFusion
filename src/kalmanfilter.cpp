@@ -38,7 +38,38 @@ void KalmanFilter::handleLidarMeasurement(LidarMeasurement meas, const BeaconMap
         BeaconData map_beacon = map.getBeaconWithId(meas.id); // Match Beacon with built in Data Association Id
         if (meas.id != -1 && map_beacon.id != -1)
         {
+            // Lidar Measurement Value
+            VectorXd z = Vector2d();
+            z(0) = meas.range;
+            z(1) = meas.theta;
 
+            // Predicated Measurement Value
+            VectorXd z_hat = Vector2d::Zero();
+            double delta_x = map_beacon.x - state[0];;
+            double delta_y = map_beacon.y - state[1];;
+            double psi = state[2];
+            double beacon_range = std::sqrt((delta_x)*(delta_x) + (delta_y)*(delta_y));
+            double beacon_angle = wrapAngle(std::atan(delta_y/delta_x) - psi);
+            z_hat(0) = beacon_range;
+            z_hat(1) = beacon_angle;
+
+            // Measurement Model Sensitivity Matrix
+            MatrixXd H = MatrixXd(2,4);
+            H << -delta_x/beacon_range, -delta_y/beacon_range, 0, 0, delta_y/beacon_range/beacon_range, -delta_x/beacon_range/beacon_range, -1, 0;
+
+            // Generate Measurement Model Noise Covariance Matrix
+            MatrixXd R = Matrix2d::Zero();
+            R(0,0) = LIDAR_RANGE_STD*LIDAR_RANGE_STD;
+            R(1,1) = LIDAR_THETA_STD*LIDAR_THETA_STD;
+
+            VectorXd y = z - z_hat;
+            MatrixXd S = H * cov * H.transpose() + R;
+            MatrixXd K = cov*H.transpose()*S.inverse();
+
+            y(1) = wrapAngle(y(1)); // Wrap the Heading Innovation
+
+            state = state + K*y;
+            cov = (Matrix4d::Identity() - K*H) * cov;    
         }
 
         // ----------------------------------------------------------------------- //
